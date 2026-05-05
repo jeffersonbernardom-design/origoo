@@ -1,0 +1,92 @@
+import AppLayout from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { CalendarRange, PlusCircle, Lock, LogOut, Pencil } from "lucide-react";
+
+const Perfil = () => (
+  <AppLayout>
+    <div className="space-y-6 max-w-2xl mx-auto">
+      <section className="bg-card rounded-2xl p-6 shadow-card border border-border flex flex-col items-center text-center">
+        <div className="relative mb-4">
+          <div className="w-24 h-24 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-3xl font-bold shadow-elegant">
+            R
+          </div>
+          <button className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full shadow-elegant active:scale-90 transition-transform">
+            <Pencil className="w-4 h-4" />
+          </button>
+        </div>
+        <h1 className="text-2xl font-bold text-foreground">Ricardo Silveira</h1>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="w-2 h-2 rounded-full bg-primary" />
+          <p className="text-xs font-semibold text-muted-foreground">
+            Ministério de Louvor • Violonista
+          </p>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <CalendarRange className="w-5 h-5 text-primary" />
+          Minha Disponibilidade
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-card p-4 rounded-2xl border border-border shadow-card border-l-4 border-l-primary">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase mb-1">
+              Próximo Bloqueio
+            </p>
+            <p className="text-lg font-bold text-foreground">15 Out — 20 Out</p>
+            <p className="text-sm text-muted-foreground mt-1">Viagem de Trabalho</p>
+          </div>
+          <button className="bg-primary-soft text-primary p-4 rounded-2xl border border-primary-soft flex flex-col items-center justify-center gap-2 hover:bg-secondary transition-colors">
+            <PlusCircle className="w-7 h-7" />
+            <span className="text-xs font-semibold">Adicionar Indisponibilidade</span>
+          </button>
+        </div>
+      </section>
+
+      <section className="bg-card rounded-2xl shadow-card border border-border overflow-hidden">
+        <div className="px-5 py-3 border-b border-border bg-muted/40">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            Preferências de Notificação
+          </h3>
+        </div>
+        <div className="divide-y divide-border">
+          {[
+            { title: "Novas Escalas", desc: "Avisar quando eu for escalado", on: true },
+            { title: "Lembretes de Culto", desc: "24h antes do meu serviço", on: true },
+            { title: "Trocas de Escala", desc: "Solicitações de outros voluntários", on: false },
+          ].map((p) => (
+            <div key={p.title} className="flex items-center justify-between px-5 py-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">{p.title}</p>
+                <p className="text-xs text-muted-foreground">{p.desc}</p>
+              </div>
+              <Switch defaultChecked={p.on} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-3 pt-2">
+        <button className="w-full flex items-center justify-between p-4 bg-card rounded-2xl border border-border shadow-card hover:bg-muted transition-colors">
+          <div className="flex items-center gap-3">
+            <Lock className="w-5 h-5 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Alterar Senha</span>
+          </div>
+        </button>
+        <Button
+          variant="outline"
+          className="w-full bg-destructive-soft text-destructive border-destructive/20 hover:bg-destructive/10"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair da Conta
+        </Button>
+        <p className="text-center text-muted-foreground text-[11px] py-2">
+          Versão 1.0 • Igreja Central
+        </p>
+      </section>
+    </div>
+  </AppLayout>
+);
+
+export default Perfil;

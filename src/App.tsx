@@ -8,6 +8,10 @@ import NotFound from "./pages/NotFound.tsx";
 import MinhaEscala from "./pages/MinhaEscala.tsx";
 import Geral from "./pages/Geral.tsx";
 import Perfil from "./pages/Perfil.tsx";
+import Auth from "./pages/Auth.tsx";
+import SuperAdmin from "./pages/SuperAdmin.tsx";
+import { AuthProvider } from "./hooks/useAuth";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -17,14 +21,18 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/minha-escala" element={<MinhaEscala />} />
-          <Route path="/geral" element={<Geral />} />
-          <Route path="/perfil" element={<Perfil />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/minha-escala" element={<ProtectedRoute><MinhaEscala /></ProtectedRoute>} />
+            <Route path="/geral" element={<ProtectedRoute><Geral /></ProtectedRoute>} />
+            <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+            <Route path="/super-admin" element={<ProtectedRoute requireSuperAdmin><SuperAdmin /></ProtectedRoute>} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

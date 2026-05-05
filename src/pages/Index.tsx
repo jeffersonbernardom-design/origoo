@@ -32,7 +32,7 @@ const Index = () => {
           <p className="text-[11px] font-semibold text-primary uppercase tracking-[0.2em] mb-1">
             Bem-vindo de volta
           </p>
-          <h1 className="text-3xl font-bold text-foreground">Olá, Ricardo 👋</h1>
+          <h1 className="text-3xl font-bold text-foreground animate-fade-in">Olá, Jefferson 👋</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Você tem um compromisso neste domingo.
           </p>

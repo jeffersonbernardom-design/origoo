@@ -145,17 +145,17 @@ const Geral = () => {
 
         <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { title: "Recepção", color: "warning", icon: HandHeart, names: ["Fabiana Costa", "Marcos Oliveira"] },
-            { title: "Infantil", color: "rose", icon: Baby, names: ["Renata Lima", "Sonia B."] },
-            { title: "Apoio", color: "success", icon: Sparkles, names: ["Time de Diáconos"] },
+            { title: "Recepção", border: "border-l-warning", text: "text-warning", icon: HandHeart, names: ["Fabiana Costa", "Marcos Oliveira"] },
+            { title: "Infantil", border: "border-l-rose", text: "text-rose", icon: Baby, names: ["Renata Lima", "Sonia B."] },
+            { title: "Apoio", border: "border-l-success", text: "text-success", icon: Sparkles, names: ["Time de Diáconos"] },
           ].map((g) => (
             <div
               key={g.title}
-              className={`bg-card p-4 rounded-2xl border border-border shadow-card border-l-4 border-l-${g.color}`}
+              className={`bg-card p-4 rounded-2xl border border-border shadow-card border-l-4 ${g.border}`}
             >
               <div className="flex items-center gap-2 mb-3">
-                <g.icon className={`w-4 h-4 text-${g.color}`} />
-                <span className={`text-xs font-bold text-${g.color}`}>{g.title}</span>
+                <g.icon className={`w-4 h-4 ${g.text}`} />
+                <span className={`text-xs font-bold ${g.text}`}>{g.title}</span>
               </div>
               {g.names.map((n) => (
                 <p key={n} className="text-sm text-foreground">

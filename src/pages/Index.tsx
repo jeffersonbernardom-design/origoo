@@ -4,10 +4,9 @@ import {
   CheckCircle2,
   MoreHorizontal,
   Music,
-  Video,
+  Megaphone,
   HandHeart,
   Baby,
-  Megaphone,
   Bell,
   CalendarCheck,
 } from "lucide-react";
@@ -15,10 +14,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 const ministries = [
-  { name: "Louvor", icon: Music, color: "text-primary", bg: "bg-primary-soft" },
-  { name: "Mídia", icon: Video, color: "text-info", bg: "bg-info/10" },
-  { name: "Acolher", icon: HandHeart, color: "text-warning", bg: "bg-warning/10" },
-  { name: "Kids", icon: Baby, color: "text-rose", bg: "bg-rose/10" },
+  { name: "Comunicação", icon: Megaphone, color: "text-info", bg: "bg-info/10", count: 8 },
+  { name: "Louvor", icon: Music, color: "text-primary", bg: "bg-primary-soft", count: 14 },
+  { name: "Diaconato", icon: HandHeart, color: "text-warning", bg: "bg-warning/10", count: 10 },
+  { name: "Infantil", icon: Baby, color: "text-rose", bg: "bg-rose/10", count: 6 },
 ];
 
 const Index = () => {
@@ -80,18 +79,20 @@ const Index = () => {
               Ver todos
             </Link>
           </div>
-          <div className="grid grid-cols-4 gap-3">
-            {ministries.map(({ name, icon: Icon, color, bg }) => (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {ministries.map(({ name, icon: Icon, color, bg, count }) => (
               <button
                 key={name}
-                className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
+                className="relative flex flex-col items-center gap-2 p-3 rounded-2xl bg-card border border-border shadow-card active:scale-95 transition-transform animate-fade-in"
               >
-                <div
-                  className={`w-14 h-14 rounded-2xl ${bg} ${color} flex items-center justify-center`}
-                >
+                <span className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full ${bg} ${color}`}>
+                  {count}
+                </span>
+                <div className={`w-14 h-14 rounded-2xl ${bg} ${color} flex items-center justify-center`}>
                   <Icon className="w-6 h-6" />
                 </div>
-                <span className="text-[11px] text-foreground">{name}</span>
+                <span className="text-[11px] font-semibold text-foreground">{name}</span>
+                <span className="text-[10px] text-muted-foreground">{count} servos</span>
               </button>
             ))}
           </div>

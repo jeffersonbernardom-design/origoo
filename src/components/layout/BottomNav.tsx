@@ -1,15 +1,18 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, Users, User } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Users, User, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
-const items = [
-  { to: "/", label: "Início", icon: LayoutDashboard },
-  { to: "/minha-escala", label: "Minha Escala", icon: CalendarDays },
-  { to: "/geral", label: "Geral", icon: Users },
-  { to: "/perfil", label: "Perfil", icon: User },
-];
-
-const BottomNav = () => (
+const BottomNav = () => {
+  const { canManage } = useAuth();
+  const items = [
+    { to: "/", label: "Início", icon: LayoutDashboard },
+    { to: "/minha-escala", label: "Minha", icon: CalendarDays },
+    { to: "/geral", label: "Geral", icon: Users },
+    ...(canManage ? [{ to: "/gerenciar", label: "Gerenciar", icon: Settings2 }] : []),
+    { to: "/perfil", label: "Perfil", icon: User },
+  ];
+  return (
   <nav className="fixed bottom-0 inset-x-0 z-40 h-20 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_16px_hsl(220_30%_50%_/_0.06)] flex items-center justify-around px-2">
     {items.map(({ to, label, icon: Icon }) => (
       <NavLink
@@ -30,6 +33,7 @@ const BottomNav = () => (
       </NavLink>
     ))}
   </nav>
-);
+  );
+};
 
 export default BottomNav;

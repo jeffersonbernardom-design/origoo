@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignments: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          role: string | null
+          service_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          role?: string | null
+          service_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          role?: string | null
+          service_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       churches: {
         Row: {
           code: string
@@ -34,6 +79,35 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      departments: {
+        Row: {
+          church_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          church_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          church_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -57,6 +131,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          church_id: string
+          created_at: string
+          id: string
+          name: string
+          service_date: string
+          service_time: string | null
+        }
+        Insert: {
+          church_id: string
+          created_at?: string
+          id?: string
+          name: string
+          service_date: string
+          service_time?: string | null
+        }
+        Update: {
+          church_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          service_date?: string
+          service_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_church_id_fkey"
             columns: ["church_id"]
             isOneToOne: false
             referencedRelation: "churches"
@@ -98,6 +207,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_church: { Args: { _church_id: string }; Returns: boolean }
+      current_user_church: { Args: never; Returns: string }
+      generate_monthly_schedule: {
+        Args: { _church_id: string; _month: number; _year: number }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -111,7 +226,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "super_admin" | "admin" | "member"
+      app_role: "super_admin" | "admin" | "member" | "leader"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -239,7 +354,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "admin", "member"],
+      app_role: ["super_admin", "admin", "member", "leader"],
     },
   },
 } as const

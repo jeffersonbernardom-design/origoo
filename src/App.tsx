@@ -10,6 +10,7 @@ import Geral from "./pages/Geral.tsx";
 import Perfil from "./pages/Perfil.tsx";
 import Auth from "./pages/Auth.tsx";
 import SuperAdmin from "./pages/SuperAdmin.tsx";
+import Gerenciar from "./pages/Gerenciar.tsx";
 import { AuthProvider } from "./hooks/useAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/minha-escala" element={<ProtectedRoute><MinhaEscala /></ProtectedRoute>} />
             <Route path="/geral" element={<ProtectedRoute><Geral /></ProtectedRoute>} />
             <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+            <Route path="/gerenciar" element={<ProtectedRoute><Gerenciar /></ProtectedRoute>} />
             <Route path="/super-admin" element={<ProtectedRoute requireSuperAdmin><SuperAdmin /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

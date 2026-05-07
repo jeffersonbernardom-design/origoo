@@ -166,6 +166,34 @@ const Gerenciar = () => {
     loadAll(churchId!);
   };
 
+  const addRecurring = async () => {
+    if (!recName || !churchId) return;
+    const { error } = await (supabase.from("recurring_services" as any) as any).insert({
+      church_id: churchId, name: recName, weekday: Number(recWeekday), service_time: recTime || null,
+    });
+    if (error) return toast.error(error.message);
+    setRecName(""); setRecTime("");
+    toast.success("Culto fixo criado");
+    loadAll(churchId);
+  };
+
+  const removeRecurring = async (id: string) => {
+    const { error } = await (supabase.from("recurring_services" as any) as any).delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    loadAll(churchId!);
+  };
+
+  const materializeMonth = async () => {
+    if (!churchId || !genMonth) return;
+    const [y, m] = genMonth.split("-").map(Number);
+    const { data, error } = await supabase.rpc("materialize_recurring_for_month" as any, {
+      _church_id: churchId, _year: y, _month: m,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(`${data ?? 0} cultos criados a partir dos fixos`);
+    loadAll(churchId);
+  };
+
   const addAssignment = async () => {
     if (!selService || !selDept || !selUser) return toast.error("Preencha culto, departamento e voluntário");
     const taken = usersTakenInService.get(selService);

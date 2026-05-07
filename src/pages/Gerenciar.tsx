@@ -258,9 +258,12 @@ const Gerenciar = () => {
       </section>
 
       <Tabs defaultValue="manual" className="animate-fade-in">
-        <TabsList className="grid grid-cols-3 w-full mb-4 h-auto">
+        <TabsList className="grid grid-cols-4 w-full mb-4 h-auto">
           <TabsTrigger value="manual" className="gap-1.5 py-2">
             <Hand className="w-4 h-4" /> Manual
+          </TabsTrigger>
+          <TabsTrigger value="fixos" className="gap-1.5 py-2">
+            <Repeat className="w-4 h-4" /> Fixos
           </TabsTrigger>
           <TabsTrigger value="auto" className="gap-1.5 py-2">
             <Wand2 className="w-4 h-4" /> Automática

@@ -454,6 +454,9 @@ const Gerenciar = () => {
               <Button onClick={generateAuto} className="bg-gradient-primary flex-1">
                 <Wand2 className="w-4 h-4 mr-2" /> Gerar escala
               </Button>
+              <Button onClick={materializeMonth} variant="secondary" className="flex-1">
+                <Repeat className="w-4 h-4 mr-2" /> Criar cultos fixos do mês
+              </Button>
               <Button onClick={clearMonth} variant="outline" className="flex-1">
                 <Trash2 className="w-4 h-4 mr-2" /> Limpar mês
               </Button>
@@ -464,6 +467,52 @@ const Gerenciar = () => {
                 Cadastre cultos, departamentos e tenha voluntários na igreja antes de gerar.
               </p>
             )}
+          </Card>
+        </TabsContent>
+
+        {/* FIXOS */}
+        <TabsContent value="fixos">
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-2">
+              <Repeat className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Cultos fixos da semana</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Defina os cultos que se repetem toda semana. Eventos pontuais devem ser criados na aba Manual.
+              Use “Criar cultos fixos do mês” na aba Automática (ou ao gerar a escala) para materializá-los.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3">
+              <Input placeholder="Nome (Culto da Noite)" value={recName} onChange={(e) => setRecName(e.target.value)} className="sm:col-span-2" />
+              <Select value={recWeekday} onValueChange={setRecWeekday}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((n,i) => (
+                    <SelectItem key={i} value={String(i)}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input type="time" value={recTime} onChange={(e) => setRecTime(e.target.value)} />
+            </div>
+            <Button onClick={addRecurring} className="mb-4 w-full sm:w-auto">
+              <Plus className="w-4 h-4 mr-2" /> Adicionar fixo
+            </Button>
+            <div className="space-y-2">
+              {recurring.map(r => (
+                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl border bg-card">
+                  <div>
+                    <p className="font-semibold">{r.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Toda {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][r.weekday]}
+                      {r.service_time ? ` · ${r.service_time.slice(0,5)}` : ""}
+                    </p>
+                  </div>
+                  <button onClick={() => removeRecurring(r.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {recurring.length === 0 && <p className="text-xs text-muted-foreground">Nenhum culto fixo cadastrado</p>}
+            </div>
           </Card>
         </TabsContent>
 

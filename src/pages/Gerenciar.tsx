@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Calendar as CalendarIcon, Users, Building2, Trash2,
-  UserPlus, Wand2, Hand, CalendarRange,
+  UserPlus, Wand2, Hand, CalendarRange, Repeat,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ interface Profile { id: string; full_name: string | null; }
 interface Assignment {
   id: string; service_id: string; department_id: string; user_id: string; role: string | null;
 }
+interface Recurring { id: string; name: string; weekday: number; service_time: string | null; }
 
 const Gerenciar = () => {
   const { user, canManage } = useAuth();
@@ -33,12 +34,17 @@ const Gerenciar = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [recurring, setRecurring] = useState<Recurring[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [deptName, setDeptName] = useState("");
   const [svcName, setSvcName] = useState("");
   const [svcDate, setSvcDate] = useState("");
   const [svcTime, setSvcTime] = useState("");
+
+  const [recName, setRecName] = useState("");
+  const [recWeekday, setRecWeekday] = useState<string>("0");
+  const [recTime, setRecTime] = useState("");
 
   const [selService, setSelService] = useState<string>("");
   const [selDept, setSelDept] = useState<string>("");
@@ -53,16 +59,18 @@ const Gerenciar = () => {
   const [calDate, setCalDate] = useState<Date | undefined>(new Date());
 
   const loadAll = async (cid: string) => {
-    const [d, s, p, a] = await Promise.all([
+    const [d, s, p, a, r] = await Promise.all([
       supabase.from("departments").select("*").eq("church_id", cid).order("name"),
       supabase.from("services").select("*").eq("church_id", cid).order("service_date"),
       supabase.from("profiles").select("id, full_name").eq("church_id", cid),
       supabase.from("assignments").select("*"),
+      supabase.from("recurring_services" as any).select("*").eq("church_id", cid).order("weekday"),
     ]);
     setDepartments(d.data ?? []);
     setServices(s.data ?? []);
     setProfiles(p.data ?? []);
     setAssignments(a.data ?? []);
+    setRecurring(((r as any).data ?? []) as Recurring[]);
   };
 
   useEffect(() => {

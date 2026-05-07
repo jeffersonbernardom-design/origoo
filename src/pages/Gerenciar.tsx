@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Calendar as CalendarIcon, Users, Building2, Trash2,
-  UserPlus, Wand2, Hand, CalendarRange,
+  UserPlus, Wand2, Hand, CalendarRange, Repeat,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ interface Profile { id: string; full_name: string | null; }
 interface Assignment {
   id: string; service_id: string; department_id: string; user_id: string; role: string | null;
 }
+interface Recurring { id: string; name: string; weekday: number; service_time: string | null; }
 
 const Gerenciar = () => {
   const { user, canManage } = useAuth();
@@ -33,12 +34,17 @@ const Gerenciar = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [recurring, setRecurring] = useState<Recurring[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [deptName, setDeptName] = useState("");
   const [svcName, setSvcName] = useState("");
   const [svcDate, setSvcDate] = useState("");
   const [svcTime, setSvcTime] = useState("");
+
+  const [recName, setRecName] = useState("");
+  const [recWeekday, setRecWeekday] = useState<string>("0");
+  const [recTime, setRecTime] = useState("");
 
   const [selService, setSelService] = useState<string>("");
   const [selDept, setSelDept] = useState<string>("");
@@ -53,16 +59,18 @@ const Gerenciar = () => {
   const [calDate, setCalDate] = useState<Date | undefined>(new Date());
 
   const loadAll = async (cid: string) => {
-    const [d, s, p, a] = await Promise.all([
+    const [d, s, p, a, r] = await Promise.all([
       supabase.from("departments").select("*").eq("church_id", cid).order("name"),
       supabase.from("services").select("*").eq("church_id", cid).order("service_date"),
       supabase.from("profiles").select("id, full_name").eq("church_id", cid),
       supabase.from("assignments").select("*"),
+      supabase.from("recurring_services" as any).select("*").eq("church_id", cid).order("weekday"),
     ]);
     setDepartments(d.data ?? []);
     setServices(s.data ?? []);
     setProfiles(p.data ?? []);
     setAssignments(a.data ?? []);
+    setRecurring(((r as any).data ?? []) as Recurring[]);
   };
 
   useEffect(() => {
@@ -158,6 +166,34 @@ const Gerenciar = () => {
     loadAll(churchId!);
   };
 
+  const addRecurring = async () => {
+    if (!recName || !churchId) return;
+    const { error } = await (supabase.from("recurring_services" as any) as any).insert({
+      church_id: churchId, name: recName, weekday: Number(recWeekday), service_time: recTime || null,
+    });
+    if (error) return toast.error(error.message);
+    setRecName(""); setRecTime("");
+    toast.success("Culto fixo criado");
+    loadAll(churchId);
+  };
+
+  const removeRecurring = async (id: string) => {
+    const { error } = await (supabase.from("recurring_services" as any) as any).delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    loadAll(churchId!);
+  };
+
+  const materializeMonth = async () => {
+    if (!churchId || !genMonth) return;
+    const [y, m] = genMonth.split("-").map(Number);
+    const { data, error } = await supabase.rpc("materialize_recurring_for_month" as any, {
+      _church_id: churchId, _year: y, _month: m,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(`${data ?? 0} cultos criados a partir dos fixos`);
+    loadAll(churchId);
+  };
+
   const addAssignment = async () => {
     if (!selService || !selDept || !selUser) return toast.error("Preencha culto, departamento e voluntário");
     const taken = usersTakenInService.get(selService);
@@ -222,9 +258,12 @@ const Gerenciar = () => {
       </section>
 
       <Tabs defaultValue="manual" className="animate-fade-in">
-        <TabsList className="grid grid-cols-3 w-full mb-4 h-auto">
+        <TabsList className="grid grid-cols-4 w-full mb-4 h-auto">
           <TabsTrigger value="manual" className="gap-1.5 py-2">
             <Hand className="w-4 h-4" /> Manual
+          </TabsTrigger>
+          <TabsTrigger value="fixos" className="gap-1.5 py-2">
+            <Repeat className="w-4 h-4" /> Fixos
           </TabsTrigger>
           <TabsTrigger value="auto" className="gap-1.5 py-2">
             <Wand2 className="w-4 h-4" /> Automática
@@ -415,6 +454,9 @@ const Gerenciar = () => {
               <Button onClick={generateAuto} className="bg-gradient-primary flex-1">
                 <Wand2 className="w-4 h-4 mr-2" /> Gerar escala
               </Button>
+              <Button onClick={materializeMonth} variant="secondary" className="flex-1">
+                <Repeat className="w-4 h-4 mr-2" /> Criar cultos fixos do mês
+              </Button>
               <Button onClick={clearMonth} variant="outline" className="flex-1">
                 <Trash2 className="w-4 h-4 mr-2" /> Limpar mês
               </Button>
@@ -425,6 +467,52 @@ const Gerenciar = () => {
                 Cadastre cultos, departamentos e tenha voluntários na igreja antes de gerar.
               </p>
             )}
+          </Card>
+        </TabsContent>
+
+        {/* FIXOS */}
+        <TabsContent value="fixos">
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-2">
+              <Repeat className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Cultos fixos da semana</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Defina os cultos que se repetem toda semana. Eventos pontuais devem ser criados na aba Manual.
+              Use “Criar cultos fixos do mês” na aba Automática (ou ao gerar a escala) para materializá-los.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-3">
+              <Input placeholder="Nome (Culto da Noite)" value={recName} onChange={(e) => setRecName(e.target.value)} className="sm:col-span-2" />
+              <Select value={recWeekday} onValueChange={setRecWeekday}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((n,i) => (
+                    <SelectItem key={i} value={String(i)}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input type="time" value={recTime} onChange={(e) => setRecTime(e.target.value)} />
+            </div>
+            <Button onClick={addRecurring} className="mb-4 w-full sm:w-auto">
+              <Plus className="w-4 h-4 mr-2" /> Adicionar fixo
+            </Button>
+            <div className="space-y-2">
+              {recurring.map(r => (
+                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl border bg-card">
+                  <div>
+                    <p className="font-semibold">{r.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Toda {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][r.weekday]}
+                      {r.service_time ? ` · ${r.service_time.slice(0,5)}` : ""}
+                    </p>
+                  </div>
+                  <button onClick={() => removeRecurring(r.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {recurring.length === 0 && <p className="text-xs text-muted-foreground">Nenhum culto fixo cadastrado</p>}
+            </div>
           </Card>
         </TabsContent>
 

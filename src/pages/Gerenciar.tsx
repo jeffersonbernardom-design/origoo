@@ -566,6 +566,104 @@ const Gerenciar = () => {
           </Card>
         </TabsContent>
 
+        {/* PESSOAS */}
+        <TabsContent value="pessoas" className="space-y-6">
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Membros do departamento</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Adicione voluntários aos departamentos. Só quem está num departamento entra na escala automática dele.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+              <Select value={memberDept} onValueChange={setMemberDept}>
+                <SelectTrigger><SelectValue placeholder="Departamento" /></SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={memberUser} onValueChange={setMemberUser}>
+                <SelectTrigger><SelectValue placeholder="Pessoa" /></SelectTrigger>
+                <SelectContent>
+                  {profiles
+                    .filter(p => !memberDept || !deptMembers.some(dm => dm.department_id === memberDept && dm.user_id === p.id))
+                    .map(p => <SelectItem key={p.id} value={p.id}>{p.full_name ?? "Sem nome"}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button onClick={addMemberToDept}><Plus className="w-4 h-4 mr-2" /> Adicionar</Button>
+            </div>
+            <div className="space-y-3 mt-4">
+              {departments.map(d => {
+                const members = deptMembers.filter(dm => dm.department_id === d.id);
+                return (
+                  <div key={d.id} className="border rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-semibold">{d.name}</p>
+                      <Badge variant="secondary">{members.length}</Badge>
+                    </div>
+                    {members.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Sem membros</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {members.map(dm => (
+                          <Badge key={dm.id} variant="outline" className="text-xs gap-1.5 pr-1">
+                            {profileMap.get(dm.user_id) ?? "—"}
+                            <button onClick={() => removeMemberFromDept(dm.id)} className="hover:text-destructive">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Líderes de departamento</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Líderes só conseguem gerenciar o próprio departamento (membros e escalas).
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+              <Select value={leaderDept} onValueChange={setLeaderDept}>
+                <SelectTrigger><SelectValue placeholder="Departamento" /></SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={leaderUser} onValueChange={setLeaderUser}>
+                <SelectTrigger><SelectValue placeholder="Pessoa" /></SelectTrigger>
+                <SelectContent>
+                  {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name ?? "Sem nome"}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button onClick={promoteLeader}><Shield className="w-4 h-4 mr-2" /> Promover</Button>
+            </div>
+            <div className="space-y-2">
+              {roleRows.filter(r => r.role === "leader" && r.department_id).map(r => (
+                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl border bg-card">
+                  <div className="text-sm">
+                    <span className="font-semibold">{profileMap.get(r.user_id) ?? "—"}</span>
+                    <span className="text-muted-foreground"> · {deptMap.get(r.department_id!) ?? "—"}</span>
+                  </div>
+                  <button onClick={() => demoteLeader(r.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {roleRows.filter(r => r.role === "leader" && r.department_id).length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhum líder de departamento ainda</p>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
         {/* CALENDAR */}
         <TabsContent value="cal">
           <Card className="p-5 animate-slide-up">

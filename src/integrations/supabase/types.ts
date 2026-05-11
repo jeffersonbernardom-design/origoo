@@ -138,6 +138,33 @@ export type Database = {
           },
         ]
       }
+      recurring_services: {
+        Row: {
+          church_id: string
+          created_at: string
+          id: string
+          name: string
+          service_time: string | null
+          weekday: number
+        }
+        Insert: {
+          church_id: string
+          created_at?: string
+          id?: string
+          name: string
+          service_time?: string | null
+          weekday: number
+        }
+        Update: {
+          church_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          service_time?: string | null
+          weekday?: number
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           church_id: string
@@ -219,6 +246,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      materialize_recurring_for_month: {
+        Args: { _church_id: string; _month: number; _year: number }
+        Returns: number
       }
       register_with_church_code: {
         Args: { _church_code: string; _full_name: string }

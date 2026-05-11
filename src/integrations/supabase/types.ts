@@ -80,6 +80,35 @@ export type Database = {
         }
         Relationships: []
       }
+      department_members: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           church_id: string
@@ -203,18 +232,21 @@ export type Database = {
       user_roles: {
         Row: {
           church_id: string | null
+          department_id: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           church_id?: string | null
+          department_id?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           church_id?: string | null
+          department_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -235,6 +267,10 @@ export type Database = {
     }
     Functions: {
       can_manage_church: { Args: { _church_id: string }; Returns: boolean }
+      can_manage_department: {
+        Args: { _department_id: string }
+        Returns: boolean
+      }
       current_user_church: { Args: never; Returns: string }
       generate_monthly_schedule: {
         Args: { _church_id: string; _month: number; _year: number }
@@ -245,6 +281,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_department_leader: {
+        Args: { _department_id: string; _user_id: string }
         Returns: boolean
       }
       materialize_recurring_for_month: {

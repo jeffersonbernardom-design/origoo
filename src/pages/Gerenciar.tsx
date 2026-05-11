@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Calendar as CalendarIcon, Users, Building2, Trash2,
-  UserPlus, Wand2, Hand, CalendarRange, Repeat,
+  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,8 @@ interface Assignment {
   id: string; service_id: string; department_id: string; user_id: string; role: string | null;
 }
 interface Recurring { id: string; name: string; weekday: number; service_time: string | null; }
+interface DeptMember { id: string; department_id: string; user_id: string; }
+interface RoleRow { id: string; user_id: string; role: string; church_id: string | null; department_id: string | null; }
 
 const Gerenciar = () => {
   const { user, canManage } = useAuth();
@@ -35,6 +37,8 @@ const Gerenciar = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [recurring, setRecurring] = useState<Recurring[]>([]);
+  const [deptMembers, setDeptMembers] = useState<DeptMember[]>([]);
+  const [roleRows, setRoleRows] = useState<RoleRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [deptName, setDeptName] = useState("");
@@ -58,19 +62,28 @@ const Gerenciar = () => {
 
   const [calDate, setCalDate] = useState<Date | undefined>(new Date());
 
+  const [memberDept, setMemberDept] = useState<string>("");
+  const [memberUser, setMemberUser] = useState<string>("");
+  const [leaderDept, setLeaderDept] = useState<string>("");
+  const [leaderUser, setLeaderUser] = useState<string>("");
+
   const loadAll = async (cid: string) => {
-    const [d, s, p, a, r] = await Promise.all([
+    const [d, s, p, a, r, dm, rr] = await Promise.all([
       supabase.from("departments").select("*").eq("church_id", cid).order("name"),
       supabase.from("services").select("*").eq("church_id", cid).order("service_date"),
       supabase.from("profiles").select("id, full_name").eq("church_id", cid),
       supabase.from("assignments").select("*"),
       supabase.from("recurring_services" as any).select("*").eq("church_id", cid).order("weekday"),
+      supabase.from("department_members" as any).select("*"),
+      supabase.from("user_roles").select("id, user_id, role, church_id, department_id").eq("church_id", cid),
     ]);
     setDepartments(d.data ?? []);
     setServices(s.data ?? []);
     setProfiles(p.data ?? []);
     setAssignments(a.data ?? []);
     setRecurring(((r as any).data ?? []) as Recurring[]);
+    setDeptMembers(((dm as any).data ?? []) as DeptMember[]);
+    setRoleRows((rr.data ?? []) as RoleRow[]);
   };
 
   useEffect(() => {
@@ -213,6 +226,40 @@ const Gerenciar = () => {
     loadAll(churchId!);
   };
 
+  const addMemberToDept = async () => {
+    if (!memberDept || !memberUser) return toast.error("Selecione departamento e pessoa");
+    const { error } = await (supabase.from("department_members" as any) as any).insert({
+      department_id: memberDept, user_id: memberUser,
+    });
+    if (error) return toast.error(error.message);
+    setMemberUser("");
+    toast.success("Membro adicionado ao departamento");
+    loadAll(churchId!);
+  };
+
+  const removeMemberFromDept = async (id: string) => {
+    const { error } = await (supabase.from("department_members" as any) as any).delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    loadAll(churchId!);
+  };
+
+  const promoteLeader = async () => {
+    if (!leaderDept || !leaderUser || !churchId) return toast.error("Selecione departamento e pessoa");
+    const { error } = await supabase.from("user_roles").insert({
+      user_id: leaderUser, role: "leader", church_id: churchId, department_id: leaderDept,
+    } as any);
+    if (error) return toast.error(error.message);
+    setLeaderUser("");
+    toast.success("Líder promovido");
+    loadAll(churchId);
+  };
+
+  const demoteLeader = async (id: string) => {
+    const { error } = await supabase.from("user_roles").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    loadAll(churchId!);
+  };
+
   const generateAuto = async () => {
     if (!churchId || !genMonth) return;
     const [y, m] = genMonth.split("-").map(Number);
@@ -258,12 +305,15 @@ const Gerenciar = () => {
       </section>
 
       <Tabs defaultValue="manual" className="animate-fade-in">
-        <TabsList className="grid grid-cols-4 w-full mb-4 h-auto">
+        <TabsList className="grid grid-cols-5 w-full mb-4 h-auto">
           <TabsTrigger value="manual" className="gap-1.5 py-2">
             <Hand className="w-4 h-4" /> Manual
           </TabsTrigger>
           <TabsTrigger value="fixos" className="gap-1.5 py-2">
             <Repeat className="w-4 h-4" /> Fixos
+          </TabsTrigger>
+          <TabsTrigger value="pessoas" className="gap-1.5 py-2">
+            <UserCog className="w-4 h-4" /> Pessoas
           </TabsTrigger>
           <TabsTrigger value="auto" className="gap-1.5 py-2">
             <Wand2 className="w-4 h-4" /> Automática
@@ -512,6 +562,104 @@ const Gerenciar = () => {
                 </div>
               ))}
               {recurring.length === 0 && <p className="text-xs text-muted-foreground">Nenhum culto fixo cadastrado</p>}
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* PESSOAS */}
+        <TabsContent value="pessoas" className="space-y-6">
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Membros do departamento</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Adicione voluntários aos departamentos. Só quem está num departamento entra na escala automática dele.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+              <Select value={memberDept} onValueChange={setMemberDept}>
+                <SelectTrigger><SelectValue placeholder="Departamento" /></SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={memberUser} onValueChange={setMemberUser}>
+                <SelectTrigger><SelectValue placeholder="Pessoa" /></SelectTrigger>
+                <SelectContent>
+                  {profiles
+                    .filter(p => !memberDept || !deptMembers.some(dm => dm.department_id === memberDept && dm.user_id === p.id))
+                    .map(p => <SelectItem key={p.id} value={p.id}>{p.full_name ?? "Sem nome"}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button onClick={addMemberToDept}><Plus className="w-4 h-4 mr-2" /> Adicionar</Button>
+            </div>
+            <div className="space-y-3 mt-4">
+              {departments.map(d => {
+                const members = deptMembers.filter(dm => dm.department_id === d.id);
+                return (
+                  <div key={d.id} className="border rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-semibold">{d.name}</p>
+                      <Badge variant="secondary">{members.length}</Badge>
+                    </div>
+                    {members.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Sem membros</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {members.map(dm => (
+                          <Badge key={dm.id} variant="outline" className="text-xs gap-1.5 pr-1">
+                            {profileMap.get(dm.user_id) ?? "—"}
+                            <button onClick={() => removeMemberFromDept(dm.id)} className="hover:text-destructive">
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Líderes de departamento</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Líderes só conseguem gerenciar o próprio departamento (membros e escalas).
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+              <Select value={leaderDept} onValueChange={setLeaderDept}>
+                <SelectTrigger><SelectValue placeholder="Departamento" /></SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={leaderUser} onValueChange={setLeaderUser}>
+                <SelectTrigger><SelectValue placeholder="Pessoa" /></SelectTrigger>
+                <SelectContent>
+                  {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name ?? "Sem nome"}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button onClick={promoteLeader}><Shield className="w-4 h-4 mr-2" /> Promover</Button>
+            </div>
+            <div className="space-y-2">
+              {roleRows.filter(r => r.role === "leader" && r.department_id).map(r => (
+                <div key={r.id} className="flex items-center justify-between p-3 rounded-xl border bg-card">
+                  <div className="text-sm">
+                    <span className="font-semibold">{profileMap.get(r.user_id) ?? "—"}</span>
+                    <span className="text-muted-foreground"> · {deptMap.get(r.department_id!) ?? "—"}</span>
+                  </div>
+                  <button onClick={() => demoteLeader(r.id)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {roleRows.filter(r => r.role === "leader" && r.department_id).length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhum líder de departamento ainda</p>
+              )}
             </div>
           </Card>
         </TabsContent>

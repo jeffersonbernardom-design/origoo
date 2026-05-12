@@ -1,141 +1,149 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Filter, User, Clock, ArrowLeftRight, Video, HandHeart, Music } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Calendar, Clock, Check, X, Plus, Trash2, Ban } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-const months = ["Outubro", "Novembro", "Dezembro"];
+interface Assignment {
+  id: string;
+  status: string;
+  service_id: string;
+  department_id: string;
+  services: { name: string; service_date: string; service_time: string | null } | null;
+  departments: { name: string } | null;
+}
 
-const cards = [
-  {
-    accent: "bg-primary",
-    label: "Louvor",
-    labelColor: "text-primary",
-    title: "Culto da Noite",
-    day: "12",
-    month: "Out",
-    role: "Guitarra Solo",
-    time: "19:00 - 21:00",
-    icon: Music,
-  },
-  {
-    accent: "bg-warning",
-    label: "Mídia",
-    labelColor: "text-warning",
-    title: "Culto de Celebração",
-    day: "19",
-    month: "Out",
-    role: "Operador de Corte",
-    time: "09:00 - 11:30",
-    icon: Video,
-  },
-  {
-    accent: "bg-success",
-    label: "Recepção",
-    labelColor: "text-success",
-    title: "Reunião de Jovens",
-    day: "26",
-    month: "Out",
-    role: "Boas-vindas",
-    time: "18:30 - 20:30",
-    icon: HandHeart,
-  },
-];
+interface Unav { id: string; day: string; reason: string | null }
 
 const MinhaEscala = () => {
-  const [active, setActive] = useState("Outubro");
+  const { user } = useAuth();
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [unav, setUnav] = useState<Unav[]>([]);
+  const [day, setDay] = useState("");
+  const [reason, setReason] = useState("");
+
+  const load = async () => {
+    if (!user) return;
+    const { data: a } = await supabase
+      .from("assignments")
+      .select("id, status, service_id, department_id, services(name, service_date, service_time), departments(name)")
+      .eq("user_id", user.id)
+      .order("service_id");
+    setAssignments((a ?? []) as any);
+    const { data: u } = await supabase
+      .from("unavailability").select("*").eq("user_id", user.id).order("day");
+    setUnav((u ?? []) as any);
+  };
+  useEffect(() => { load(); }, [user]);
+
+  const setStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from("assignments").update({ status }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(status === "confirmed" ? "Escala confirmada!" : "Escala recusada");
+    load();
+  };
+
+  const addUnav = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !day) return;
+    const { error } = await supabase.from("unavailability").insert({ user_id: user.id, day, reason });
+    if (error) return toast.error(error.message);
+    setDay(""); setReason(""); load();
+  };
+
+  const removeUnav = async (id: string) => {
+    await supabase.from("unavailability").delete().eq("id", id);
+    load();
+  };
+
+  const upcoming = assignments.filter(a => a.services && new Date(a.services.service_date) >= new Date(new Date().toDateString()));
+
+  const statusBadge = (s: string) => {
+    if (s === "confirmed") return <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success font-semibold">Confirmado</span>;
+    if (s === "declined") return <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-semibold">Recusado</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold">Pendente</span>;
+  };
 
   return (
     <AppLayout>
       <section className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold text-foreground">Minha Escala</h1>
-          <button className="flex items-center gap-1 text-primary text-xs font-semibold">
-            <Filter className="w-4 h-4" /> Filtrar
-          </button>
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {months.map((m) => (
-            <button
-              key={m}
-              onClick={() => setActive(m)}
-              className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
-                active === m
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card border border-border text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
+        <h1 className="text-3xl font-bold text-foreground">Minha Escala</h1>
+        <p className="text-sm text-muted-foreground">Confirme suas escalas e marque dias indisponíveis</p>
       </section>
 
       <div className="space-y-4">
-        {cards.map((c) => (
-          <article
-            key={c.title}
-            className="bg-card rounded-2xl shadow-card border border-border overflow-hidden flex"
-          >
-            <div className={`w-1.5 ${c.accent}`} />
-            <div className="p-4 flex-1">
-              <div className="flex justify-between items-start mb-1">
-                <div>
-                  <p className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${c.labelColor}`}>
-                    {c.label}
-                  </p>
-                  <h3 className="text-xl font-bold text-foreground">{c.title}</h3>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-primary leading-none">{c.day}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase font-semibold mt-1">
-                    {c.month}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-4 py-4 border-y border-border">
-                <div className="flex items-center gap-2">
-                  <c.icon className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-[10px] uppercase text-muted-foreground font-semibold">
-                      Função
-                    </p>
-                    <p className="text-sm text-foreground">{c.role}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-[10px] uppercase text-muted-foreground font-semibold">
-                      Horário
-                    </p>
-                    <p className="text-sm text-foreground">{c.time}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button className="flex-1 bg-primary-soft text-primary hover:bg-primary hover:text-primary-foreground">
-                  Ver Detalhes
-                </Button>
-                <Button variant="outline" className="flex-1">
-                  <ArrowLeftRight className="w-4 h-4 mr-1.5" />
-                  Trocar
-                </Button>
-              </div>
-            </div>
-          </article>
-        ))}
-
-        <div className="mt-6 p-6 rounded-2xl bg-gradient-soft border border-primary-soft text-center">
-          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-primary flex items-center justify-center mb-3 shadow-elegant">
-            <User className="w-7 h-7 text-primary-foreground" />
+        {upcoming.length === 0 && (
+          <div className="bg-card rounded-2xl border border-border p-6 text-center text-sm text-muted-foreground">
+            Você não tem escalas futuras.
           </div>
-          <h4 className="text-lg font-bold text-foreground mb-1">Precisa de ajuda?</h4>
-          <p className="text-xs text-muted-foreground mb-4">
-            Não pode comparecer? Solicite uma troca com outro voluntário.
-          </p>
-          <Button variant="outline" className="rounded-full">
-            Central de Ajuda
-          </Button>
+        )}
+        {upcoming.map((a) => {
+          const d = a.services ? new Date(a.services.service_date + "T00:00:00") : null;
+          return (
+            <article key={a.id} className="bg-card rounded-2xl shadow-card border border-border p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold text-primary mb-1">{a.departments?.name}</p>
+                  <h3 className="text-lg font-bold text-foreground">{a.services?.name}</h3>
+                  {statusBadge(a.status)}
+                </div>
+                {d && (
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-primary leading-none">{format(d, "dd")}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold mt-1">{format(d, "MMM", { locale: ptBR })}</p>
+                  </div>
+                )}
+              </div>
+              {a.services?.service_time && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                  <Clock className="w-4 h-4" /> {a.services.service_time.slice(0,5)}
+                </div>
+              )}
+              {a.status !== "confirmed" && a.status !== "declined" && (
+                <div className="flex gap-2">
+                  <Button onClick={() => setStatus(a.id, "confirmed")} className="flex-1 bg-success text-success-foreground hover:bg-success/90">
+                    <Check className="w-4 h-4 mr-1.5" /> Confirmar
+                  </Button>
+                  <Button onClick={() => setStatus(a.id, "declined")} variant="outline" className="flex-1">
+                    <X className="w-4 h-4 mr-1.5" /> Recusar
+                  </Button>
+                </div>
+              )}
+              {(a.status === "confirmed" || a.status === "declined") && (
+                <Button onClick={() => setStatus(a.id, "pending")} variant="ghost" size="sm">Alterar resposta</Button>
+              )}
+            </article>
+          );
+        })}
+
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-card mt-6">
+          <h2 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+            <Ban className="w-4 h-4 text-primary" /> Dias indisponíveis
+          </h2>
+          <p className="text-xs text-muted-foreground mb-3">A escala automática não vai te incluir nesses dias.</p>
+          <form onSubmit={addUnav} className="flex gap-2 mb-4">
+            <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} required className="flex-1" />
+            <Input placeholder="Motivo (opcional)" value={reason} onChange={(e) => setReason(e.target.value)} className="flex-1" />
+            <Button type="submit" size="icon" className="bg-gradient-primary text-primary-foreground"><Plus className="w-4 h-4" /></Button>
+          </form>
+          <div className="space-y-2">
+            {unav.length === 0 && <p className="text-sm text-muted-foreground">Nenhum dia marcado.</p>}
+            {unav.map((u) => (
+              <div key={u.id} className="flex items-center justify-between bg-muted/30 rounded-lg p-2.5">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">{format(new Date(u.day + "T00:00:00"), "dd/MM/yyyy")}</span>
+                  {u.reason && <span className="text-xs text-muted-foreground">— {u.reason}</span>}
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => removeUnav(u.id)}><Trash2 className="w-4 h-4" /></Button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </AppLayout>

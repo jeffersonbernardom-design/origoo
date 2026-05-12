@@ -138,6 +138,36 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           church_id: string | null
@@ -269,6 +299,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      unavailability: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

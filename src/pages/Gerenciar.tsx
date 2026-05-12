@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Calendar as CalendarIcon, Users, Building2, Trash2,
-  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog,
+  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog, Music,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,7 @@ interface Assignment {
 interface Recurring { id: string; name: string; weekday: number; service_time: string | null; }
 interface DeptMember { id: string; department_id: string; user_id: string; }
 interface RoleRow { id: string; user_id: string; role: string; church_id: string | null; department_id: string | null; }
+interface Song { id: string; service_id: string; title: string; artist: string | null; song_key: string | null; link: string | null; position: number; }
 
 const Gerenciar = () => {
   const { user, canManage } = useAuth();
@@ -39,6 +40,7 @@ const Gerenciar = () => {
   const [recurring, setRecurring] = useState<Recurring[]>([]);
   const [deptMembers, setDeptMembers] = useState<DeptMember[]>([]);
   const [roleRows, setRoleRows] = useState<RoleRow[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [deptName, setDeptName] = useState("");
@@ -67,8 +69,14 @@ const Gerenciar = () => {
   const [leaderDept, setLeaderDept] = useState<string>("");
   const [leaderUser, setLeaderUser] = useState<string>("");
 
+  const [songService, setSongService] = useState<string>("");
+  const [songTitle, setSongTitle] = useState("");
+  const [songArtist, setSongArtist] = useState("");
+  const [songKey, setSongKey] = useState("");
+  const [songLink, setSongLink] = useState("");
+
   const loadAll = async (cid: string) => {
-    const [d, s, p, a, r, dm, rr] = await Promise.all([
+    const [d, s, p, a, r, dm, rr, sg] = await Promise.all([
       supabase.from("departments").select("*").eq("church_id", cid).order("name"),
       supabase.from("services").select("*").eq("church_id", cid).order("service_date"),
       supabase.from("profiles").select("id, full_name").eq("church_id", cid),
@@ -76,6 +84,7 @@ const Gerenciar = () => {
       supabase.from("recurring_services" as any).select("*").eq("church_id", cid).order("weekday"),
       supabase.from("department_members" as any).select("*"),
       supabase.from("user_roles").select("id, user_id, role, church_id, department_id").eq("church_id", cid),
+      supabase.from("service_songs" as any).select("*").order("position"),
     ]);
     setDepartments(d.data ?? []);
     setServices(s.data ?? []);
@@ -84,6 +93,7 @@ const Gerenciar = () => {
     setRecurring(((r as any).data ?? []) as Recurring[]);
     setDeptMembers(((dm as any).data ?? []) as DeptMember[]);
     setRoleRows((rr.data ?? []) as RoleRow[]);
+    setSongs(((sg as any).data ?? []) as Song[]);
   };
 
   useEffect(() => {
@@ -256,6 +266,29 @@ const Gerenciar = () => {
 
   const demoteLeader = async (id: string) => {
     const { error } = await supabase.from("user_roles").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    loadAll(churchId!);
+  };
+
+  const addSong = async () => {
+    if (!songService || !songTitle.trim()) return toast.error("Selecione o culto e informe o título");
+    const pos = songs.filter(s => s.service_id === songService).length;
+    const { error } = await (supabase.from("service_songs" as any) as any).insert({
+      service_id: songService,
+      title: songTitle.trim(),
+      artist: songArtist.trim() || null,
+      song_key: songKey.trim() || null,
+      link: songLink.trim() || null,
+      position: pos,
+    });
+    if (error) return toast.error(error.message);
+    setSongTitle(""); setSongArtist(""); setSongKey(""); setSongLink("");
+    toast.success("Música adicionada");
+    loadAll(churchId!);
+  };
+
+  const removeSong = async (id: string) => {
+    const { error } = await (supabase.from("service_songs" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     loadAll(churchId!);
   };

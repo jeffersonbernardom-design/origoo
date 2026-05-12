@@ -499,6 +499,88 @@ const Gerenciar = () => {
               )}
             </div>
           </Card>
+
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-4">
+              <Music className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Repertório do Louvor</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              As músicas adicionadas aqui aparecem na aba <strong>Geral</strong> para todos os voluntários.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div className="sm:col-span-2">
+                <Label className="text-xs">Culto</Label>
+                <Select value={songService} onValueChange={setSongService}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o culto" /></SelectTrigger>
+                  <SelectContent>
+                    {services.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} — {new Date(s.service_date + "T00:00").toLocaleDateString("pt-BR")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Título</Label>
+                <Input placeholder="Ex: Lugar Secreto" value={songTitle} onChange={(e) => setSongTitle(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Artista (opcional)</Label>
+                <Input placeholder="Ex: Gabriela Rocha" value={songArtist} onChange={(e) => setSongArtist(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Tom (opcional)</Label>
+                <Input placeholder="Ex: G" value={songKey} onChange={(e) => setSongKey(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Link (opcional)</Label>
+                <Input placeholder="YouTube, Cifra Club..." value={songLink} onChange={(e) => setSongLink(e.target.value)} />
+              </div>
+            </div>
+            <Button onClick={addSong} className="bg-gradient-primary w-full sm:w-auto mb-4">
+              <Plus className="w-4 h-4 mr-2" /> Adicionar música
+            </Button>
+
+            <div className="space-y-4">
+              {services.map(s => {
+                const list = songs.filter(x => x.service_id === s.id);
+                if (list.length === 0) return null;
+                return (
+                  <div key={s.id} className="border rounded-xl p-3">
+                    <p className="font-semibold mb-2">
+                      {s.name} <span className="text-xs text-muted-foreground">— {new Date(s.service_date + "T00:00").toLocaleDateString("pt-BR")}</span>
+                    </p>
+                    <div className="space-y-1.5">
+                      {list.map(song => (
+                        <div key={song.id} className="flex items-center justify-between text-sm bg-muted/40 rounded-lg px-3 py-2">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">
+                              {song.title}
+                              {song.song_key && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-primary-soft text-primary">{song.song_key}</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {song.artist}
+                              {song.link && (
+                                <> · <a href={song.link} target="_blank" rel="noreferrer" className="text-primary hover:underline">link</a></>
+                              )}
+                            </p>
+                          </div>
+                          <button onClick={() => removeSong(song.id)} className="text-muted-foreground hover:text-destructive shrink-0 ml-2">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {songs.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma música cadastrada</p>
+              )}
+            </div>
+          </Card>
         </TabsContent>
 
         {/* AUTO */}

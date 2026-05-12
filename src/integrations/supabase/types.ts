@@ -194,6 +194,47 @@ export type Database = {
         }
         Relationships: []
       }
+      service_songs: {
+        Row: {
+          artist: string | null
+          created_at: string
+          id: string
+          link: string | null
+          position: number
+          service_id: string
+          song_key: string | null
+          title: string
+        }
+        Insert: {
+          artist?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          position?: number
+          service_id: string
+          song_key?: string | null
+          title: string
+        }
+        Update: {
+          artist?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          position?: number
+          service_id?: string
+          song_key?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_songs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           church_id: string

@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Calendar as CalendarIcon, Users, Building2, Trash2,
-  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog,
+  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog, Music,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,7 @@ interface Assignment {
 interface Recurring { id: string; name: string; weekday: number; service_time: string | null; }
 interface DeptMember { id: string; department_id: string; user_id: string; }
 interface RoleRow { id: string; user_id: string; role: string; church_id: string | null; department_id: string | null; }
+interface Song { id: string; service_id: string; title: string; artist: string | null; song_key: string | null; link: string | null; position: number; }
 
 const Gerenciar = () => {
   const { user, canManage } = useAuth();
@@ -39,6 +40,7 @@ const Gerenciar = () => {
   const [recurring, setRecurring] = useState<Recurring[]>([]);
   const [deptMembers, setDeptMembers] = useState<DeptMember[]>([]);
   const [roleRows, setRoleRows] = useState<RoleRow[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [deptName, setDeptName] = useState("");
@@ -67,8 +69,14 @@ const Gerenciar = () => {
   const [leaderDept, setLeaderDept] = useState<string>("");
   const [leaderUser, setLeaderUser] = useState<string>("");
 
+  const [songService, setSongService] = useState<string>("");
+  const [songTitle, setSongTitle] = useState("");
+  const [songArtist, setSongArtist] = useState("");
+  const [songKey, setSongKey] = useState("");
+  const [songLink, setSongLink] = useState("");
+
   const loadAll = async (cid: string) => {
-    const [d, s, p, a, r, dm, rr] = await Promise.all([
+    const [d, s, p, a, r, dm, rr, sg] = await Promise.all([
       supabase.from("departments").select("*").eq("church_id", cid).order("name"),
       supabase.from("services").select("*").eq("church_id", cid).order("service_date"),
       supabase.from("profiles").select("id, full_name").eq("church_id", cid),
@@ -76,6 +84,7 @@ const Gerenciar = () => {
       supabase.from("recurring_services" as any).select("*").eq("church_id", cid).order("weekday"),
       supabase.from("department_members" as any).select("*"),
       supabase.from("user_roles").select("id, user_id, role, church_id, department_id").eq("church_id", cid),
+      supabase.from("service_songs" as any).select("*").order("position"),
     ]);
     setDepartments(d.data ?? []);
     setServices(s.data ?? []);
@@ -84,6 +93,7 @@ const Gerenciar = () => {
     setRecurring(((r as any).data ?? []) as Recurring[]);
     setDeptMembers(((dm as any).data ?? []) as DeptMember[]);
     setRoleRows((rr.data ?? []) as RoleRow[]);
+    setSongs(((sg as any).data ?? []) as Song[]);
   };
 
   useEffect(() => {
@@ -256,6 +266,29 @@ const Gerenciar = () => {
 
   const demoteLeader = async (id: string) => {
     const { error } = await supabase.from("user_roles").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    loadAll(churchId!);
+  };
+
+  const addSong = async () => {
+    if (!songService || !songTitle.trim()) return toast.error("Selecione o culto e informe o título");
+    const pos = songs.filter(s => s.service_id === songService).length;
+    const { error } = await (supabase.from("service_songs" as any) as any).insert({
+      service_id: songService,
+      title: songTitle.trim(),
+      artist: songArtist.trim() || null,
+      song_key: songKey.trim() || null,
+      link: songLink.trim() || null,
+      position: pos,
+    });
+    if (error) return toast.error(error.message);
+    setSongTitle(""); setSongArtist(""); setSongKey(""); setSongLink("");
+    toast.success("Música adicionada");
+    loadAll(churchId!);
+  };
+
+  const removeSong = async (id: string) => {
+    const { error } = await (supabase.from("service_songs" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     loadAll(churchId!);
   };
@@ -463,6 +496,88 @@ const Gerenciar = () => {
               })}
               {assignments.length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-6">Nenhuma escalação ainda</p>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-5 animate-slide-up">
+            <div className="flex items-center gap-2 mb-4">
+              <Music className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Repertório do Louvor</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              As músicas adicionadas aqui aparecem na aba <strong>Geral</strong> para todos os voluntários.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div className="sm:col-span-2">
+                <Label className="text-xs">Culto</Label>
+                <Select value={songService} onValueChange={setSongService}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o culto" /></SelectTrigger>
+                  <SelectContent>
+                    {services.map(s => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} — {new Date(s.service_date + "T00:00").toLocaleDateString("pt-BR")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Título</Label>
+                <Input placeholder="Ex: Lugar Secreto" value={songTitle} onChange={(e) => setSongTitle(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Artista (opcional)</Label>
+                <Input placeholder="Ex: Gabriela Rocha" value={songArtist} onChange={(e) => setSongArtist(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Tom (opcional)</Label>
+                <Input placeholder="Ex: G" value={songKey} onChange={(e) => setSongKey(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Link (opcional)</Label>
+                <Input placeholder="YouTube, Cifra Club..." value={songLink} onChange={(e) => setSongLink(e.target.value)} />
+              </div>
+            </div>
+            <Button onClick={addSong} className="bg-gradient-primary w-full sm:w-auto mb-4">
+              <Plus className="w-4 h-4 mr-2" /> Adicionar música
+            </Button>
+
+            <div className="space-y-4">
+              {services.map(s => {
+                const list = songs.filter(x => x.service_id === s.id);
+                if (list.length === 0) return null;
+                return (
+                  <div key={s.id} className="border rounded-xl p-3">
+                    <p className="font-semibold mb-2">
+                      {s.name} <span className="text-xs text-muted-foreground">— {new Date(s.service_date + "T00:00").toLocaleDateString("pt-BR")}</span>
+                    </p>
+                    <div className="space-y-1.5">
+                      {list.map(song => (
+                        <div key={song.id} className="flex items-center justify-between text-sm bg-muted/40 rounded-lg px-3 py-2">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">
+                              {song.title}
+                              {song.song_key && <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-primary-soft text-primary">{song.song_key}</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {song.artist}
+                              {song.link && (
+                                <> · <a href={song.link} target="_blank" rel="noreferrer" className="text-primary hover:underline">link</a></>
+                              )}
+                            </p>
+                          </div>
+                          <button onClick={() => removeSong(song.id)} className="text-muted-foreground hover:text-destructive shrink-0 ml-2">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {songs.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma música cadastrada</p>
               )}
             </div>
           </Card>

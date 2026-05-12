@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Search,
   CalendarCheck,
@@ -12,6 +14,7 @@ import {
   CheckCircle2,
   CircleDashed,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 
 const chips = ["Todos", "Louvor", "Mídia", "Recepção", "Infantil"];
@@ -29,6 +32,33 @@ const midia = [
 
 const Geral = () => {
   const [active, setActive] = useState("Todos");
+  const { user } = useAuth();
+  const [nextService, setNextService] = useState<{ id: string; name: string; service_date: string; service_time: string | null } | null>(null);
+  const [songs, setSongs] = useState<{ id: string; title: string; artist: string | null; song_key: string | null; link: string | null }[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: prof } = await supabase.from("profiles").select("church_id").eq("id", user.id).single();
+      if (!prof?.church_id) return;
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: svc } = await supabase
+        .from("services")
+        .select("id, name, service_date, service_time")
+        .eq("church_id", prof.church_id)
+        .gte("service_date", today)
+        .order("service_date")
+        .limit(1)
+        .maybeSingle();
+      if (!svc) return;
+      setNextService(svc);
+      const { data: sg } = await (supabase.from("service_songs" as any) as any)
+        .select("id, title, artist, song_key, link, position")
+        .eq("service_id", svc.id)
+        .order("position");
+      setSongs((sg ?? []) as any);
+    })();
+  }, [user]);
 
   return (
     <AppLayout>
@@ -117,6 +147,60 @@ const Geral = () => {
                   )}
                 </div>
               ))}
+            </div>
+            <div className="border-t border-border bg-primary-soft/30">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Music className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                    Repertório
+                  </span>
+                </div>
+                {nextService && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {nextService.name} · {new Date(nextService.service_date + "T00:00").toLocaleDateString("pt-BR")}
+                  </span>
+                )}
+              </div>
+              {songs.length === 0 ? (
+                <p className="p-4 text-xs text-muted-foreground text-center">
+                  Nenhuma música definida para o próximo culto.
+                </p>
+              ) : (
+                <ol className="divide-y divide-border">
+                  {songs.map((s, i) => (
+                    <li key={s.id} className="p-4 flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {s.title}
+                          {s.song_key && (
+                            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-primary-soft text-primary font-bold">
+                              {s.song_key}
+                            </span>
+                          )}
+                        </p>
+                        {s.artist && (
+                          <p className="text-[11px] text-muted-foreground truncate">{s.artist}</p>
+                        )}
+                      </div>
+                      {s.link && (
+                        <a
+                          href={s.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-muted-foreground hover:text-primary shrink-0"
+                          aria-label="Abrir link da música"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
           </div>
         </div>

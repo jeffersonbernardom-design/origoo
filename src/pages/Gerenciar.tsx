@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Calendar as CalendarIcon, Users, Building2, Trash2,
-  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog, Music,
+  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog, Music, Megaphone, Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +74,30 @@ const Gerenciar = () => {
   const [songArtist, setSongArtist] = useState("");
   const [songKey, setSongKey] = useState("");
   const [songLink, setSongLink] = useState("");
+
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeBody, setNoticeBody] = useState("");
+  const [noticeDept, setNoticeDept] = useState<string>("all");
+  const [sendingNotice, setSendingNotice] = useState(false);
+
+  const sendNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noticeTitle.trim()) return toast.error("Coloque um título");
+    setSendingNotice(true);
+    let targets: string[] = [];
+    if (noticeDept === "all") {
+      targets = profiles.map((p) => p.id);
+    } else {
+      targets = deptMembers.filter((m) => m.department_id === noticeDept).map((m) => m.user_id);
+    }
+    if (targets.length === 0) { setSendingNotice(false); return toast.error("Nenhum destinatário"); }
+    const rows = targets.map((uid) => ({ user_id: uid, title: noticeTitle, body: noticeBody || null }));
+    const { error } = await supabase.from("notifications").insert(rows);
+    setSendingNotice(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Aviso enviado para ${targets.length} pessoa${targets.length>1?"s":""}`);
+    setNoticeTitle(""); setNoticeBody("");
+  };
 
   const loadAll = async (cid: string) => {
     const [d, s, p, a, r, dm, rr, sg] = await Promise.all([
@@ -338,7 +362,7 @@ const Gerenciar = () => {
       </section>
 
       <Tabs defaultValue="manual" className="animate-fade-in">
-        <TabsList className="grid grid-cols-5 w-full mb-4 h-auto">
+        <TabsList className="grid grid-cols-6 w-full mb-4 h-auto">
           <TabsTrigger value="manual" className="gap-1.5 py-2">
             <Hand className="w-4 h-4" /> Manual
           </TabsTrigger>
@@ -353,6 +377,9 @@ const Gerenciar = () => {
           </TabsTrigger>
           <TabsTrigger value="cal" className="gap-1.5 py-2">
             <CalendarRange className="w-4 h-4" /> Calendário
+          </TabsTrigger>
+          <TabsTrigger value="avisos" className="gap-1.5 py-2">
+            <Megaphone className="w-4 h-4" /> Avisos
           </TabsTrigger>
         </TabsList>
 
@@ -848,6 +875,48 @@ const Gerenciar = () => {
                 );
               })}
             </div>
+          </Card>
+        </TabsContent>
+
+        {/* AVISOS */}
+        <TabsContent value="avisos" className="space-y-4">
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold text-foreground">Enviar aviso</h2>
+            </div>
+            <p className="text-xs text-muted-foreground">Manda um aviso pra todo mundo da igreja ou só pra um departamento. Aparece no sininho 🔔 de cada pessoa.</p>
+            <form onSubmit={sendNotice} className="space-y-3">
+              <div>
+                <Label>Para</Label>
+                <Select value={noticeDept} onValueChange={setNoticeDept}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toda a igreja</SelectItem>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Título</Label>
+                <Input value={noticeTitle} onChange={(e) => setNoticeTitle(e.target.value)} placeholder="Ex: Reunião de líderes domingo" required />
+              </div>
+              <div>
+                <Label>Mensagem (opcional)</Label>
+                <textarea
+                  value={noticeBody}
+                  onChange={(e) => setNoticeBody(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder="Detalhes do aviso..."
+                />
+              </div>
+              <Button type="submit" disabled={sendingNotice} className="w-full bg-gradient-primary text-primary-foreground">
+                <Send className="w-4 h-4 mr-2" /> {sendingNotice ? "Enviando..." : "Enviar aviso"}
+              </Button>
+            </form>
           </Card>
         </TabsContent>
       </Tabs>

@@ -877,6 +877,48 @@ const Gerenciar = () => {
             </div>
           </Card>
         </TabsContent>
+
+        {/* AVISOS */}
+        <TabsContent value="avisos" className="space-y-4">
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold text-foreground">Enviar aviso</h2>
+            </div>
+            <p className="text-xs text-muted-foreground">Manda um aviso pra todo mundo da igreja ou só pra um departamento. Aparece no sininho 🔔 de cada pessoa.</p>
+            <form onSubmit={sendNotice} className="space-y-3">
+              <div>
+                <Label>Para</Label>
+                <Select value={noticeDept} onValueChange={setNoticeDept}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toda a igreja</SelectItem>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Título</Label>
+                <Input value={noticeTitle} onChange={(e) => setNoticeTitle(e.target.value)} placeholder="Ex: Reunião de líderes domingo" required />
+              </div>
+              <div>
+                <Label>Mensagem (opcional)</Label>
+                <textarea
+                  value={noticeBody}
+                  onChange={(e) => setNoticeBody(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder="Detalhes do aviso..."
+                />
+              </div>
+              <Button type="submit" disabled={sendingNotice} className="w-full bg-gradient-primary text-primary-foreground">
+                <Send className="w-4 h-4 mr-2" /> {sendingNotice ? "Enviando..." : "Enviar aviso"}
+              </Button>
+            </form>
+          </Card>
+        </TabsContent>
       </Tabs>
     </AppLayout>
   );

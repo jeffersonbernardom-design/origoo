@@ -75,6 +75,30 @@ const Gerenciar = () => {
   const [songKey, setSongKey] = useState("");
   const [songLink, setSongLink] = useState("");
 
+  const [noticeTitle, setNoticeTitle] = useState("");
+  const [noticeBody, setNoticeBody] = useState("");
+  const [noticeDept, setNoticeDept] = useState<string>("all");
+  const [sendingNotice, setSendingNotice] = useState(false);
+
+  const sendNotice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noticeTitle.trim()) return toast.error("Coloque um título");
+    setSendingNotice(true);
+    let targets: string[] = [];
+    if (noticeDept === "all") {
+      targets = profiles.map((p) => p.id);
+    } else {
+      targets = deptMembers.filter((m) => m.department_id === noticeDept).map((m) => m.user_id);
+    }
+    if (targets.length === 0) { setSendingNotice(false); return toast.error("Nenhum destinatário"); }
+    const rows = targets.map((uid) => ({ user_id: uid, title: noticeTitle, body: noticeBody || null }));
+    const { error } = await supabase.from("notifications").insert(rows);
+    setSendingNotice(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Aviso enviado para ${targets.length} pessoa${targets.length>1?"s":""}`);
+    setNoticeTitle(""); setNoticeBody("");
+  };
+
   const loadAll = async (cid: string) => {
     const [d, s, p, a, r, dm, rr, sg] = await Promise.all([
       supabase.from("departments").select("*").eq("church_id", cid).order("name"),

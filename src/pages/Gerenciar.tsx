@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Sparkles, Plus, Calendar as CalendarIcon, Users, Building2, Trash2,
-  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog, Music,
+  UserPlus, Wand2, Hand, CalendarRange, Repeat, Shield, UserCog, Music, Megaphone, Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -338,7 +338,7 @@ const Gerenciar = () => {
       </section>
 
       <Tabs defaultValue="manual" className="animate-fade-in">
-        <TabsList className="grid grid-cols-5 w-full mb-4 h-auto">
+        <TabsList className="grid grid-cols-6 w-full mb-4 h-auto">
           <TabsTrigger value="manual" className="gap-1.5 py-2">
             <Hand className="w-4 h-4" /> Manual
           </TabsTrigger>
@@ -353,6 +353,9 @@ const Gerenciar = () => {
           </TabsTrigger>
           <TabsTrigger value="cal" className="gap-1.5 py-2">
             <CalendarRange className="w-4 h-4" /> Calendário
+          </TabsTrigger>
+          <TabsTrigger value="avisos" className="gap-1.5 py-2">
+            <Megaphone className="w-4 h-4" /> Avisos
           </TabsTrigger>
         </TabsList>
 

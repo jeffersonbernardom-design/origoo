@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { LayoutDashboard, CalendarDays, Users, User, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { motion } from "framer-motion";
 
 const BottomNav = () => {
   const { canManage } = useAuth();
@@ -21,15 +22,24 @@ const BottomNav = () => {
         end={to === "/"}
         className={({ isActive }) =>
           cn(
-            "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px]",
-            isActive
-              ? "bg-primary-soft text-primary"
-              : "text-muted-foreground hover:text-primary"
+            "relative flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-colors min-w-[64px]",
+            isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
           )
         }
       >
-        <Icon className="w-5 h-5" />
-        <span className="text-[11px] font-medium">{label}</span>
+        {({ isActive }) => (
+          <>
+            {isActive && (
+              <motion.span
+                layoutId="bottom-nav-pill"
+                className="absolute inset-0 rounded-xl bg-primary-soft -z-0"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
+            <Icon className="w-5 h-5 relative z-10" />
+            <span className="text-[11px] font-medium relative z-10">{label}</span>
+          </>
+        )}
       </NavLink>
     ))}
   </nav>

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import simbolo from "@/assets/simbolo.png.asset.json";
+import logo from "@/assets/origo-logo.png.asset.json";
 
 interface Notif { id: string; title: string; body: string | null; link: string | null; read: boolean; created_at: string }
 
@@ -40,9 +40,8 @@ const AppHeader = () => {
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 h-16 bg-card/90 backdrop-blur-md border-b border-border flex items-center justify-between px-5">
-      <Link to="/" className="flex items-center gap-2">
-        <img src={simbolo.url} alt="Origo" className="w-9 h-9 object-contain" />
-        <span className="font-display font-bold text-primary tracking-tight text-lg">Origo</span>
+      <Link to="/" className="flex items-center">
+        <img src={logo.url} alt="Origo — Planeje, organize e sirva" className="h-9 w-auto object-contain" />
       </Link>
       <div className="flex items-center gap-2">
         <Popover>

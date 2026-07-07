@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Church, Mail, Lock, User as UserIcon, KeyRound, Loader2 } from "lucide-react";
+import { Mail, Lock, User as UserIcon, KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
+import logo from "@/assets/origo-logo.png.asset.json";
 
 const Auth = () => {
   const { user, loading } = useAuth();
@@ -69,10 +70,7 @@ const Auth = () => {
 
       <div className="relative w-full max-w-md animate-scale-in">
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-primary items-center justify-center shadow-elegant mb-4 animate-float">
-            <Church className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-4xl font-extrabold text-primary tracking-tight">Origo</h1>
+          <img src={logo.url} alt="Origo — Planeje, organize e sirva" className="h-20 w-auto mx-auto mb-4 animate-float" />
           <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
             O ponto de partida onde cada servo encontra seu lugar para servir.
           </p>

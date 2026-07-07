@@ -41,7 +41,7 @@ const AppHeader = () => {
   return (
     <header className="fixed top-0 inset-x-0 z-40 h-16 bg-card/90 backdrop-blur-md border-b border-border flex items-center justify-between px-5">
       <Link to="/" className="flex items-center">
-        <img src={logo.url} alt="Origo — Planeje, organize e sirva" className="h-9 w-auto object-contain" />
+        <img src={logo.url} alt="Origo — Planeje, organize e sirva" className="h-11 w-auto object-contain" />
       </Link>
       <div className="flex items-center gap-2">
         <Popover>

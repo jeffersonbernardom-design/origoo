@@ -118,7 +118,7 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Alturas do app shell (usadas por header, conteúdo e nav) */
-    --app-header-h: 4rem;
+    --app-header-h: 4.25rem;
     --app-nav-h: 4.5rem;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
